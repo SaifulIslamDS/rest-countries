@@ -1,92 +1,89 @@
-const searchInput = document.getElementById("searchInput");
+const searchInput = document.getElementById("search-input");
 const searchBtn = document.getElementById("search-btn");
 const countryContainer = document.getElementById("country-container");
-const countryDetails = document.getElementById("country-details");
 const errorDiv = document.getElementById("error");
-const spinner = document.getElementById("spinner");
+const countryDetails = document.getElementById("country-details");
 
-searchBtn.addEventListener("click", function () {
-  console.log(spinner);
-  const search = searchInput.value;
-  if (search === "") {
-    errorDiv.innerText = "Search field cannot be empty.";
-    return;
-  }
-  //   Clear
-  countryContainer.innerHTML = "";
-  countryDetails.innerHTML = "";
-  const url = `https://restcountries.eu/rest/v2/name/${search}`;
-  spinner.classList.remove("d-none");
-  fetch(url)
-    .then((res) => res.json())
-    .then((data) => {
-      // Setting a timer of 1.5s, before removing the spinnner, and showing data
-      setTimeout(() => {
-        spinner.classList.add("d-none");
-        showData(data);
-      }, 1500);
-    })
-    .finally(() => {
-      searchInput.value === "";
-    });
-});
-
-function showData(countryArray) {
-  // Error Handing
-  if (countryArray.message === "Not Found") {
-    errorDiv.innerText = "NO Result Found";
-  } else {
-    errorDiv.innerText = "";
-  }
-
-  countryArray.forEach((item) => {
-    //   ফর লুপ যেহেতু, যত গুলা এলিমেন্ট, ততবার রিপিট হবে
-    console.log(item.flag);
-    const div = document.createElement("div");
-    div.classList.add("col-md-3");
-    div.innerHTML = `
-      <!-- Image -->
-      <div class="rounded overflow-hidden border p-2">
-        <img
-          src="${item.flag}"
-          class="w-100"
-          alt=""
-        />
-      </div>
-      <!-- Body -->
-      <div
-        class="
-          py-2
-          d-flex
-          justify-content-between
-          align-items-center
-          d-md-block
-          text-md-center
-        "
-      >
-        <h1>${item.name}</h1>
-        <button onclick="showDetails('${item.alpha3Code}')" class="btn btn-dark">Learn More</button>
-      </div>
-      `;
-    countryContainer.appendChild(div);
-  });
+function emptyContent(){
+    searchInput.value = "";
+    countryContainer.innerHTML = "";
+    countryDetails.innerHTML = "";
 }
-function showDetails(alpha3Code) {
-  fetch(`https://restcountries.eu/rest/v2/alpha/${alpha3Code}`)
-    .then((res) => res.json())
-    .then((data) => {
-      // data -> OBJECT
-      // data.currencies -> Array
-      // data.currencies[0] -> Object
-      // data.currencies[0].name
-      console.log(data.currencies[0].name);
-      countryDetails.innerHTML = `
-        <div class="col-md-12">
-            <h1>${data.name}</h1>
-            <p>Capital: ${data.capital}</p>
-            <p>Currency Name: ${data.currencies[0].name}</p>
-            <p>Currency Symbol: ${data.currencies[0].symbol}</p>
+
+
+searchBtn.addEventListener("click", captureInputValues);
+function captureInputValues(){
+    const search =  searchInput.value;
+    if (search === "") {
+        emptyContent();
+        errorDiv.innerHTML = `
+        <p style="display: inline; background-color: red; color: white; padding:10px;">Search field cannot be empty</p>
+        `;
+        return;
+    } else {    
+        emptyContent();
+        const countryURL = `https://restcountries.eu/rest/v2/name/${search}`;
+        fetch(countryURL)
+        .then(res => res.json())
+        .then(data => dataStorage(data));
+        /* .then((data) => {
+            function
+        }); */
+    }
+}
+// store data in this function
+function dataStorage(data){
+    if (data.status === 404) {
+        errorDiv.innerHTML = `
+        <p style="display: inline; background-color: red; color: white; padding:10px">No such country name found!</p>
+        `;
+    } else {
+        errorDiv.innerText = "";
+    }
+    data.forEach(item => {
+        // console.log(item);
+        const itemDiv = document.createElement("div");
+        // const itemDivClassList = ["col-md-3" , "col-12"];
+        // itemDiv.classList.add(...itemDivClassList);
+        itemDiv.classList.add("col-md-3" , "col-12");
+        // Reference: https://stackoverflow.com/questions/11115998/is-there-a-way-to-add-remove-several-classes-in-one-single-instruction-with-clas
+
+        itemDiv.innerHTML = `
+        <div class="rounded overflow-hidden border p-2">
+            <img class="w-100" src="${item.flag}" alt=""/>
         </div>
-      `;
+        <div class="py-2 d-flex justify-content-between align-items-center d-md-block text-md-center">
+            <h3>${item.name}</h3>
+            <button class="btn btn-dark" onclick="showDetails('${item.alpha2Code}')">Learn More</button>
+        </div>`;
+        countryContainer.append(itemDiv);
     });
+};
+
+// Show details
+function showDetails(countryCode){
+    const alphaURL = `https://restcountries.eu/rest/v2/alpha/${countryCode}`;
+    fetch(alphaURL)
+    .then(res => res.json())
+    .then(data => showData(data))
+};
+
+function showData(item){
+    // console.log(data)
+    countryDetails.innerHTML = `
+    <div class="col-md-6">
+        <h2>Country details</h2>
+        <img class="w-100" src="${item.flag}" alt=""/>
+    </div> 
+    <div class="col-md-6">
+        <h1>${item.name}</h1>
+        <p>Capital: ${item.capital}</p>
+        <p>Currency Name: ${item.currencies[0].name}</p>
+        <p>Population: ${item.population}</p>
+    </div>
+    <hr style="margin-top:20px" />`;
 }
+
+// 
+// 
+// 
